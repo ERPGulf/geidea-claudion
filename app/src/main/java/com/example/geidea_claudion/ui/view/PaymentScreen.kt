@@ -30,31 +30,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.geidea_claudion.data.models.TransactionResult
+import com.example.geidea_claudion.ui.theme.GeideaclaudionTheme
 import com.example.geidea_claudion.ui.viewmodel.PaymentViewModel
 
+// ui/PaymentScreen.kt
 // ui/PaymentScreen.kt
 @Composable
 fun PaymentScreen(
     viewModel: PaymentViewModel = viewModel()
 ) {
-    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        viewModel.handleTransactionResult(result.data)
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.launchIntent.collect { intent ->
-            val shareIntent = Intent.createChooser(intent, null)
-            launcher.launch(shareIntent)
-        }
-    }
 
     Scaffold { innerPadding ->
         Column(
@@ -62,81 +51,26 @@ fun PaymentScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Just the app name / title
             Text(
                 text = "PAX Payment Terminal",
                 style = MaterialTheme.typography.headlineMedium
             )
 
-            // Error display
-            uiState.errorMessage?.let { error ->
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Text(
-                        text = error,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Input fields
-            OutlinedTextField(
-                value = uiState.amount,
-                onValueChange = viewModel::updateAmount,
-                label = { Text("Amount (SAR)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-                isError = !uiState.isAmountValid && uiState.amount.isNotEmpty()
-            )
-
-            OutlinedTextField(
-                value = uiState.orderId,
-                onValueChange = viewModel::updateOrderId,
-                label = { Text("Order ID (Optional)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ActionButton(
-                    text = "Purchase",
-                    enabled = uiState.canSubmit,
-                    isLoading = uiState.isLoading,
-                    onClick = { viewModel.processPurchase(context) },
-                    modifier = Modifier.weight(1f)
-                )
-
-                ActionButton(
-                    text = "Refund",
-                    enabled = uiState.canSubmit,
-                    isLoading = uiState.isLoading,
-                    onClick = { viewModel.processRefund(context) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Button(
-                onClick = { viewModel.processReversal(context) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading
-            ) {
-                Text("Reversal")
-            }
-
-            // Transaction result
-            uiState.transactionResult?.let { result ->
-                TransactionResultCard(
-                    result = result,
-                    onClear = viewModel::clearResult
-                )
+            // Show dynamic status info if you want
+            if (uiState.isLoading) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Processing transaction...")
+            } else {
+                uiState.transactionResult?.let { result ->
+                    Text("Last Transaction: ${result.status}")
+                } ?: Text("Listening for payment requests...")
             }
         }
     }
@@ -208,5 +142,14 @@ private fun TransactionResultCard(
                 Text("Clear")
             }
         }
+    }
+}
+
+
+@Preview
+@Composable
+private fun HomeScreenPreview() {
+    GeideaclaudionTheme {
+        PaymentScreen()
     }
 }
