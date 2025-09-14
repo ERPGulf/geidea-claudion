@@ -1,6 +1,6 @@
 package com.example.geidea_claudion.data.models
 
-data class PaymentRequest(val amount: Double, val orderId: String? = null)
+data class PaymentRequest(val amount: Double, val orderId: String? = null,val type: TransactionType)
 
 data class TransactionResult(
     val status: String,

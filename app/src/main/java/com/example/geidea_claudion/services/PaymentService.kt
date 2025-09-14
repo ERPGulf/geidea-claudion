@@ -9,6 +9,8 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.example.geidea_claudion.data.models.TransactionType
+import com.example.geidea_claudion.utils.JsonParser
 import com.example.geidea_claudion.utils.MadaIntegration
 import com.example.geidea_claudion.utils.MqttManager
 import kotlinx.coroutines.CoroutineScope
@@ -65,21 +67,20 @@ class PaymentService : Service() {
     private fun handleMqttMessage(message: String) {
         serviceScope.launch {
             // parse JSON from backend
-            val request = parsePaymentRequest(message)
-
+            val request = JsonParser.parsePaymentRequest(message)
             // create intent for Mada app
             val intent = when (request.type) {
-                "PURCHASE" -> mada.createPurchaseIntent(request)
-                "REFUND" -> mada.createRefundIntent(request)
-                "REVERSAL" -> mada.createReversalIntent(request)
-                else -> null
+                TransactionType.PURCHASE -> mada.createPurchaseIntent(request)
+                TransactionType.REFUND -> mada.createRefundIntent(request)
+                TransactionType.REVERSAL -> mada.createReversalIntent(request)
             }
 
-            intent?.let {
-                val proxyIntent = Intent(this@PaymentService, TransactionProxyActivity::class.java).apply {
-                    putExtra("MADA_INTENT", it)   // forward Mada intent
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
+            intent.let {
+                val proxyIntent =
+                    Intent(this@PaymentService, TransactionProxyActivity::class.java).apply {
+                        putExtra("MADA_INTENT", it)   // forward Mada intent
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
                 startActivity(proxyIntent)  // launch proxy activity
             }
         }
