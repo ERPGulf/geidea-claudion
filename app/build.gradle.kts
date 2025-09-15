@@ -48,6 +48,8 @@ dependencies {
     implementation("com.hivemq:hivemq-mqtt-client:1.3.0")
     // Gson
     implementation("com.google.code.gson:gson:2.13.2")
+    // okhttp
+    implementation("com.squareup.okhttp3:okhttp:5.1.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

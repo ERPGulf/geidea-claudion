@@ -24,7 +24,7 @@ class TransactionProxyActivity: Activity() {
             val result = mada.parseTransactionResponse(data)
 
             // send result to backend REST API
-            sendResultToBackend(result)
+//            sendResultToBackend(result)
 
             // Optionally publish to MQTT
             // mqttManager.publish("payments/results", gson.toJson(result))
@@ -32,7 +32,7 @@ class TransactionProxyActivity: Activity() {
         finish()
     }
 
-    private fun sendResultToBackend(result: Any) {
-        // make Retrofit/OkHttp POST call to your backend
-    }
+//    private fun sendResultToBackend(result: Any) {
+//        // make Retrofit/OkHttp POST call to your backend
+//    }
 }

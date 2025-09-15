@@ -68,6 +68,9 @@ class PaymentService : Service() {
         serviceScope.launch {
             // parse JSON from backend
             val request = JsonParser.parsePaymentRequest(message)
+            if (!mada.isAppInstalled(this@PaymentService)) {
+                return@launch
+            }
             // create intent for Mada app
             val intent = when (request.type) {
                 TransactionType.PURCHASE -> mada.createPurchaseIntent(request)
