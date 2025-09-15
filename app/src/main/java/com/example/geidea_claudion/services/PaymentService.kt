@@ -50,11 +50,11 @@ class PaymentService : Service() {
     }
 
     private fun setupMqtt() {
-        mqttManager = MqttManager(host = "your.mqtt.server.com")
+        mqttManager = MqttManager(host = "saudi.claudion.com")
 
         mqttManager.connect(
             onConnected = {
-                mqttManager.subscribe("payments/requests") { message ->
+                mqttManager.subscribe("Topic-New") { message ->
                     handleMqttMessage(message)
                 }
             },
