@@ -1,3 +1,4 @@
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -14,7 +15,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -28,28 +28,43 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties"
+            )
+        }
+    }
 }
-
 dependencies {
-    // ViewModel dependencies
-    implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
-    // mqtt hivemq
-    implementation("com.hivemq:hivemq-mqtt-client:1.3.0")
+    // ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // HiveMQ MQTT
+    implementation(libs.hivemq.mqtt.client)
+
     // Gson
-    implementation("com.google.code.gson:gson:2.13.2")
-    // okhttp
-    implementation("com.squareup.okhttp3:okhttp:5.1.0")
+    implementation(libs.gson)
+
+    // OkHttp
+    implementation(libs.okhttp)
+
+    // Timber
+    implementation(libs.timber)
+
+    // Core + Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -58,6 +73,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

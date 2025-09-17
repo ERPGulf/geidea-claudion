@@ -1,4 +1,3 @@
-// services/PaymentService.kt
 package com.example.geidea_claudion.services
 
 import android.app.Notification
@@ -8,6 +7,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.geidea_claudion.data.models.TransactionType
 import com.example.geidea_claudion.utils.JsonParser
@@ -16,6 +16,7 @@ import com.example.geidea_claudion.utils.MqttManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class PaymentService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO)
@@ -24,17 +25,18 @@ class PaymentService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForegroundService()
+        Log.d("PaymentService", "Service created")
+        startAsForegroundService()
         setupMqtt()
     }
 
-    private fun startForegroundService() {
+    private fun startAsForegroundService() {
         val channelId = "payment_service_channel"
         val channelName = "Payment Service"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                channelId, channelName, NotificationManager.IMPORTANCE_LOW
+                channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -50,42 +52,46 @@ class PaymentService : Service() {
     }
 
     private fun setupMqtt() {
-        mqttManager = MqttManager(host = "saudi.claudion.com")
-
+        mqttManager = MqttManager(
+            context = this,
+            host = "saudi.claudion.com",
+//            username = """user_9x!@#Z$_secure""",
+//            password = """V9!r@X#2z$Lq8^mE&7b*TjW0+Kd%uNp""",
+            port = 8883
+        )
         mqttManager.connect(
             onConnected = {
-                mqttManager.subscribe("Topic-New") { message ->
+                Log.d("PaymentService", "MQTT connected")
+                mqttManager.subscribe() { message ->
                     handleMqttMessage(message)
                 }
             },
             onError = { throwable ->
-                throwable.printStackTrace()
+                Log.e("PaymentService", "MQTT error", throwable)
             }
         )
     }
 
     private fun handleMqttMessage(message: String) {
         serviceScope.launch {
-            // parse JSON from backend
+            Timber.tag("PaymentService").d("Received MQTT: $message")
             val request = JsonParser.parsePaymentRequest(message)
             if (!mada.isAppInstalled(this@PaymentService)) {
+                Log.w("PaymentService", "Mada app not installed")
                 return@launch
             }
-            // create intent for Mada app
             val intent = when (request.type) {
                 TransactionType.PURCHASE -> mada.createPurchaseIntent(request)
                 TransactionType.REFUND -> mada.createRefundIntent(request)
                 TransactionType.REVERSAL -> mada.createReversalIntent(request)
             }
 
-            intent.let {
-                val proxyIntent =
-                    Intent(this@PaymentService, TransactionProxyActivity::class.java).apply {
-                        putExtra("MADA_INTENT", it)   // forward Mada intent
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                startActivity(proxyIntent)  // launch proxy activity
-            }
+            val proxyIntent =
+                Intent(this@PaymentService, TransactionProxyActivity::class.java).apply {
+                    putExtra("MADA_INTENT", intent)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            startActivity(proxyIntent)
         }
     }
 
@@ -93,6 +99,7 @@ class PaymentService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d("PaymentService", "Service destroyed, disconnecting MQTT")
         mqttManager.disconnect()
     }
 }
