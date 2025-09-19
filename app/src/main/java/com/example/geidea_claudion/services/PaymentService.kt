@@ -16,9 +16,13 @@ import com.example.geidea_claudion.utils.MqttManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
-class PaymentService : Service() {
+class
+
+
+
+
+PaymentService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO)
     private lateinit var mqttManager: MqttManager
     private val mada = MadaIntegration()
@@ -55,8 +59,6 @@ class PaymentService : Service() {
         mqttManager = MqttManager(
             context = this,
             host = "saudi.claudion.com",
-//            username = """user_9x!@#Z$_secure""",
-//            password = """V9!r@X#2z$Lq8^mE&7b*TjW0+Kd%uNp""",
             port = 8883
         )
         mqttManager.connect(
@@ -74,24 +76,38 @@ class PaymentService : Service() {
 
     private fun handleMqttMessage(message: String) {
         serviceScope.launch {
-            Timber.tag("PaymentService").d("Received MQTT: $message")
-            val request = JsonParser.parsePaymentRequest(message)
-            if (!mada.isAppInstalled(this@PaymentService)) {
-                Log.w("PaymentService", "Mada app not installed")
-                return@launch
-            }
-            val intent = when (request.type) {
-                TransactionType.PURCHASE -> mada.createPurchaseIntent(request)
-                TransactionType.REFUND -> mada.createRefundIntent(request)
-                TransactionType.REVERSAL -> mada.createReversalIntent(request)
-            }
+            Log.d("PaymentService", "Received MQTT: $message")
 
-            val proxyIntent =
-                Intent(this@PaymentService, TransactionProxyActivity::class.java).apply {
-                    putExtra("MADA_INTENT", intent)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                // Step 1: Parse MQTT payload
+                val mqttPayload = JsonParser.parseMqttPayload(message)
+
+                // Step 2: Convert to PaymentRequest (uuid → orderId)
+                val request = JsonParser.mqttToPaymentRequest(mqttPayload)
+
+                // Step 3: Ensure Mada app is installed
+                if (!mada.isAppInstalled(this@PaymentService)) {
+                    Log.w("PaymentService", "Mada app not installed")
+                    return@launch
                 }
-            startActivity(proxyIntent)
+
+                // Step 4: Build the intent based on transaction type
+                val intent = when (request.type) {
+                    TransactionType.PURCHASE -> mada.createPurchaseIntent(request)
+                    TransactionType.REFUND -> mada.createRefundIntent(request)
+                    TransactionType.REVERSAL -> mada.createReversalIntent(request)
+                }
+
+                // Step 5: Forward to proxy activity
+                val proxyIntent =
+                    Intent(this@PaymentService, TransactionProxyActivity::class.java).apply {
+                        putExtra("MADA_INTENT", intent)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                startActivity(proxyIntent)
+            } catch (e: Exception) {
+                Log.e("PaymentService", "Failed to handle MQTT message", e)
+            }
         }
     }
 

@@ -65,7 +65,8 @@ class MadaIntegration {
                         pan = jsonObject.optString("pan"),
                         authCode = jsonObject.optString("auth_code"),
                         amount = jsonObject.optString("amount"),
-                        respCode = jsonObject.optString("resp_code")
+                        respCode = jsonObject.optString("resp_code"),
+                        orderId = jsonObject.optString("ORDER_ID")
                     )
                 } catch (e: Exception) {
                     TransactionResult(status = "Error", reason = "Failed to parse response")

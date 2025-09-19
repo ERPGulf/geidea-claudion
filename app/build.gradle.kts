@@ -61,8 +61,6 @@ dependencies {
     // OkHttp
     implementation(libs.okhttp)
 
-    // Timber
-    implementation(libs.timber)
 
     // Core + Compose
     implementation(libs.androidx.core.ktx)

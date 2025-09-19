@@ -1,5 +1,7 @@
 package com.example.geidea_claudion.utils
 
+import com.example.geidea_claudion.data.models.TransactionResultRequest
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -9,8 +11,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 object ApiClient {
     private val client = OkHttpClient()
+    private val gson = Gson()
 
-    suspend fun sendPaymentResult(jsonBody: String): String? = withContext(Dispatchers.IO) {
+    suspend fun sendPaymentResult(payload: TransactionResultRequest): String? = withContext(Dispatchers.IO) {
+        val jsonBody = gson.toJson(payload)
         val body = jsonBody.toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()
@@ -22,7 +26,7 @@ object ApiClient {
 
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw Exception("Error: ${response.code}")
+                throw Exception("Error: ${response.code} - ${response.message}")
             }
             response.body?.string()
         }
