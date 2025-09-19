@@ -9,14 +9,12 @@ import androidx.annotation.RequiresApi
 import com.example.geidea_claudion.data.models.TransactionResultRequest
 import com.example.geidea_claudion.utils.ApiClient
 import com.example.geidea_claudion.utils.MadaIntegration
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class TransactionProxyActivity : Activity() {
     private val mada = MadaIntegration()
-    private val gson = Gson()
     private val scope = CoroutineScope(Dispatchers.IO)
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
