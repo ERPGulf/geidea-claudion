@@ -17,10 +17,10 @@ class MqttManager(
 
     private lateinit var client: Mqtt3AsyncClient
     private val TAG = "MqttManager"
-
+    private val deviceId = getAndroidId(context)
     // ✅ Hardcoded credentials inside the manager
-    private val username = "user_9x!@#Z\$_secure"
-    private val password = "V9!r@X#2z\$Lq8^mE&7b*TjW0+Kd%uNp"
+    private val username = "dK7pX3aN9tB1qL5mR8zF"
+    private val password = "L7mQ2tB9pX5aZ3vH8nR1kC6yD4sF0jW"
 
     fun connect(onConnected: () -> Unit, onError: (Throwable) -> Unit) {
         try {
@@ -28,7 +28,7 @@ class MqttManager(
 
             client = MqttClient.builder()
                 .useMqttVersion3()
-                .identifier(clientId)
+                .identifier(deviceId)
                 .serverHost(host)
                 .serverPort(port)
                 .sslWithDefaultConfig()
@@ -42,7 +42,7 @@ class MqttManager(
                 .applySimpleAuth()
                 .build()
 
-            Log.d(TAG, "Attempting to connect to MQTT broker with username $username")
+            Log.d(TAG, "Attempting to connect to MQTT broker with username $username and password $password")
 
             client.connect(connectMessage).whenComplete { _, throwable ->
                 if (throwable != null) {
@@ -61,6 +61,7 @@ class MqttManager(
 
     fun subscribe(onMessage: (String) -> Unit) {
         val topic = getAndroidId(context)
+        Log.d(TAG, "Subscribing to topic $topic")
         if (!::client.isInitialized) {
             Log.e(TAG, "Cannot subscribe: MQTT client not initialized")
             return
@@ -70,7 +71,11 @@ class MqttManager(
                 .topicFilter(topic)
                 .callback { publish ->
                     val payload = publish.payload.orElse(null)
-                    val message = payload?.let { String(it.array(), StandardCharsets.UTF_8) }
+                    val message = payload?.let { buf ->
+                        val copy = ByteArray(buf.remaining())
+                        buf.get(copy)  // ✅ safe copy, no ReadOnlyBufferException
+                        String(copy, StandardCharsets.UTF_8)
+                    }
                     Log.d(TAG, "Received message on topic '$topic': $message")
                     message?.let { onMessage(it) }
                 }
@@ -86,6 +91,7 @@ class MqttManager(
             Log.e(TAG, "Exception during subscription to '$topic'", ex)
         }
     }
+
 
     fun publish(topic: String, message: String) {
         if (!::client.isInitialized) {
